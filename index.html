@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Stage Deck Calculator</title>
+  <script>
+    (() => {
+      const savedTheme = localStorage.getItem('stage-deck-calculator-theme');
+      document.documentElement.dataset.theme = savedTheme === 'dark' ? 'dark' : 'light';
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand" aria-label="Stage Deck Calculator">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <div>
+          <strong>Stage Deck Calculator</strong>
+          <span>Deck, leg &amp; support planning</span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="theme-toggle" role="group" aria-label="Colour theme">
+          <button id="lightThemeBtn" type="button" data-theme-option="light" aria-pressed="true">Light</button>
+          <button id="darkThemeBtn" type="button" data-theme-option="dark" aria-pressed="false">Dark</button>
+        </div>
+        <span id="saveStatus" class="save-status" role="status">Saved locally</span>
+        <button class="button subtle" id="newBtn" type="button">New layout</button>
+        <button class="button subtle" id="importBtn" type="button">Import</button>
+        <button class="button primary" id="exportBtn" type="button">Export JSON</button>
+        <input id="importFile" type="file" accept="application/json,.json" hidden />
+      </div>
+    </header>
+
+    <main class="calculator-shell">
+      <section class="calculator" aria-labelledby="calculatorTitle">
+        <header class="calculator-header">
+          <div>
+            <h1 id="calculatorTitle">Stage materials calculator</h1>
+            <p>Arrange mixed deck sizes, rotate them, then choose four or six legs on each deck.</p>
+          </div>
+        </header>
+
+        <div class="calculator-body">
+          <div class="layout-editor">
+            <div class="layout-controls">
+              <div class="control-cluster">
+                <label>
+                  <span>Rows</span>
+                  <input id="stageRows" type="number" min="1" max="12" value="2" />
+                </label>
+                <label>
+                  <span>Columns</span>
+                  <input id="stageColumns" type="number" min="1" max="12" value="3" />
+                </label>
+                <button class="button subtle" id="stageFillBtn" type="button">Fill 2400 grid</button>
+                <button class="button subtle" id="stageClearBtn" type="button">Clear</button>
+              </div>
+
+              <div class="control-cluster divided" aria-label="Add a stage deck">
+                <span class="control-label">Add deck</span>
+                <button class="button subtle" data-stage-add-size="1200" type="button">1200 × 1200</button>
+                <button class="button subtle" data-stage-add-size="1800" type="button">1800 × 1200</button>
+                <button class="button subtle" data-stage-add-size="2400" type="button">2400 × 1200</button>
+              </div>
+
+              <div class="control-cluster divided selected-controls">
+                <label>
+                  <span>Selected deck</span>
+                  <select id="stageDeckSize">
+                    <option value="1200">1200 × 1200</option>
+                    <option value="1800">1800 × 1200</option>
+                    <option value="2400">2400 × 1200</option>
+                  </select>
+                </label>
+                <button class="button subtle" id="stageRotateDeckBtn" type="button">Rotate selected</button>
+                <span id="stageSelectionHint" class="selection-hint">Select a deck to edit it</span>
+              </div>
+            </div>
+
+            <div class="grid-scroll">
+              <div class="grid-wrap">
+                <div class="stage-grid" id="stageGrid"></div>
+                <div class="support-layer" id="stageSupportLayer" aria-hidden="true"></div>
+              </div>
+            </div>
+
+            <div class="grid-legend">
+              <span><i class="support-swatch"></i> Shared wood support</span>
+              <span>Number shows how many deck legs use that support</span>
+              <span>Drag decks to move them · snaps every 600 mm</span>
+            </div>
+          </div>
+
+          <aside class="material-summary" aria-label="Calculated materials">
+            <h2>Materials</h2>
+            <div class="material-primary">
+              <div><strong id="stageDeckCount">0</strong><span>Decks</span></div>
+              <div><strong id="stageLegCount">0</strong><span>Legs</span></div>
+              <div class="wood-total"><strong id="stageWoodCount">0</strong><span>Wood</span></div>
+            </div>
+            <dl class="material-breakdown">
+              <div><dt>1200 × 1200 decks</dt><dd id="stage1200Count">0</dd></div>
+              <div><dt>1800 × 1200 decks</dt><dd id="stage1800Count">0</dd></div>
+              <div><dt>2400 × 1200 decks</dt><dd id="stage2400Count">0</dd></div>
+              <div><dt>4-leg decks</dt><dd id="stageFourCount">0</dd></div>
+              <div><dt>6-leg decks</dt><dd id="stageSixCount">0</dd></div>
+              <div><dt>Wood without sharing</dt><dd id="stageUnsharedWoodCount">0</dd></div>
+              <div class="saved"><dt>Wood saved by sharing</dt><dd id="stageWoodSaved">0</dd></div>
+            </dl>
+            <div class="calculation-note">
+              Corner supports are shared wherever deck coordinates meet. Six-leg decks also use the midpoint of each long edge. One wood block can support up to four deck legs.
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
