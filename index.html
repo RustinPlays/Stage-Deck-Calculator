@@ -23,15 +23,81 @@
           <span>Deck, leg &amp; support planning</span>
         </div>
       </div>
-      <div class="top-actions">
-        <div class="theme-toggle" role="group" aria-label="Colour theme">
-          <button id="lightThemeBtn" type="button" data-theme-option="light" aria-pressed="true">Light</button>
-          <button id="darkThemeBtn" type="button" data-theme-option="dark" aria-pressed="false">Dark</button>
+      <div class="theme-toggle" role="group" aria-label="Colour theme">
+        <button id="lightThemeBtn" type="button" data-theme-option="light" aria-pressed="true">Light</button>
+        <button id="darkThemeBtn" type="button" data-theme-option="dark" aria-pressed="false">Dark</button>
+      </div>
+      <span class="topbar-spacer" aria-hidden="true"></span>
+      <div class="materials-menu-wrap">
+        <span class="materials-title">Materials</span>
+          <div class="materials-inline-summary" role="group" aria-label="Current material totals">
+            <div><strong id="stageDeckCount">0</strong><span>Decks</span></div>
+            <div><strong id="stageLegCount">0</strong><span>Legs</span></div>
+            <div><strong id="stageWoodCount">0</strong><span>Wood</span></div>
+            <div><strong id="stageSkirtCount">0</strong><span>Skirts</span></div>
+          </div>
+          <button class="materials-toggle" id="materialsToggleBtn" type="button" aria-expanded="false" aria-label="Open materials details" aria-controls="materialsPopover">Details</button>
+          <div class="materials-popover" id="materialsPopover" hidden>
+            <section class="material-summary" aria-label="Calculated materials">
+              <div class="material-summary-header">
+                <h2>Materials</h2>
+              </div>
+              <dl class="material-breakdown">
+                <div id="stage1200Row"><dt>1200 × 1200 decks</dt><dd id="stage1200Count">0</dd></div>
+                <div id="stage1800Row"><dt>1800 × 1200 decks</dt><dd id="stage1800Count">0</dd></div>
+                <div id="stage2400Row"><dt>2400 × 1200 decks</dt><dd id="stage2400Count">0</dd></div>
+                <div id="stage1000x2000Row"><dt>1000 × 2000 decks</dt><dd id="stage1000x2000Count">0</dd></div>
+                <div id="stage2000x500Row"><dt>2000 × 500 decks</dt><dd id="stage2000x500Count">0</dd></div>
+                <div id="stageFourRow"><dt>4-leg decks</dt><dd id="stageFourCount">0</dd></div>
+                <div id="stageSixRow"><dt>6-leg decks</dt><dd id="stageSixCount">0</dd></div>
+              </dl>
+              <dl class="stage-measurements" aria-label="Carpet and stage skirt calculations">
+                <div><dt>Carpet size</dt><dd id="stageCarpetDimensions">0 × 0 m</dd></div>
+                <div><dt>Carpet area</dt><dd id="stageCarpetArea">0 m²</dd></div>
+                <div><dt>Full perimeter</dt><dd id="stagePerimeter">0 m</dd></div>
+                <div><dt id="stageSkirtCountLabel">Stage skirts (5 m)</dt><dd id="stageSkirtDetailCount">0</dd></div>
+              </dl>
+              <p class="carpet-roll-note">Carpet size and area use the enclosing rectangle, including gaps between decks. Skirts follow exposed edges with 100 mm overlap at joins.</p>
+              <div class="calculation-note">
+                Corner supports are shared wherever deck coordinates meet. Six-leg decks also use the midpoint of each long edge. One wood block can support up to four deck legs.
+              </div>
+            </section>
+          </div>
         </div>
+      <span class="topbar-spacer" aria-hidden="true"></span>
+      <div class="top-actions">
+        <div class="overlap-warning" id="stageOverlapWarning" role="alert" hidden></div>
         <span id="saveStatus" class="save-status" role="status">Saved locally</span>
+        <button class="button subtle" id="helpToggleBtn" type="button" aria-expanded="false" aria-controls="helpPopover">Help</button>
+        <div class="help-popover" id="helpPopover" role="dialog" aria-label="Stage deck calculator help" hidden>
+          <div class="help-popover-header">
+            <h2>How to use the stage planner</h2>
+            <button id="helpCloseBtn" type="button" aria-label="Close help">×</button>
+          </div>
+          <section>
+            <h3>Mouse controls</h3>
+            <ul>
+              <li>Click a deck to select it; drag it to move it. Drag on empty canvas to box-select.</li>
+              <li>Ctrl/Cmd-click adds or removes a deck from the selection. Selected decks move and edit together.</li>
+              <li>Click an Add deck size to place automatically, or drag it onto the grid to choose its position.</li>
+              <li>Hover just outside a deck corner for the rotation cursor. Drag around the selection center to rotate in 90° steps; reverse the drag to turn back. Click a corner arrow for one right turn.</li>
+              <li>Right-click empty grid space for Add deck options. Right-click a deck for edit actions.</li>
+              <li>Right-drag to pan the grid; scroll to zoom around the pointer.</li>
+            </ul>
+          </section>
+          <section>
+            <h3>Keyboard shortcuts</h3>
+            <dl>
+              <div><dt>Ctrl/Cmd + A</dt><dd>Select all decks</dd></div>
+              <div><dt>Delete / Backspace</dt><dd>Delete selected decks</dd></div>
+              <div><dt>Escape</dt><dd>Clear selection or close a menu</dd></div>
+            </dl>
+          </section>
+        </div>
         <button class="button subtle" id="newBtn" type="button">New layout</button>
         <button class="button subtle" id="importBtn" type="button">Import</button>
-        <button class="button primary" id="exportBtn" type="button">Export JSON</button>
+        <button class="button subtle" id="exportBtn" type="button">Export JSON</button>
+        <button class="button primary" id="exportPngBtn" type="button">Export PNG</button>
         <input id="importFile" type="file" accept="application/json,.json" hidden />
       </div>
     </header>
@@ -41,47 +107,12 @@
         <header class="calculator-header">
           <div>
             <h1 id="calculatorTitle">Stage materials calculator</h1>
-            <p>Arrange mixed deck sizes, rotate them, then choose four or six legs on each deck.</p>
+            <p>Arrange mixed deck sizes, rotate them, then choose four or six legs where the deck size allows.</p>
           </div>
         </header>
 
         <div class="calculator-body">
           <div class="layout-editor">
-            <div class="layout-controls">
-              <div class="control-cluster">
-                <label>
-                  <span>Rows</span>
-                  <input id="stageRows" type="number" min="1" max="12" value="2" />
-                </label>
-                <label>
-                  <span>Columns</span>
-                  <input id="stageColumns" type="number" min="1" max="12" value="3" />
-                </label>
-                <button class="button subtle" id="stageFillBtn" type="button">Fill 2400 grid</button>
-                <button class="button subtle" id="stageClearBtn" type="button">Clear</button>
-              </div>
-
-              <div class="control-cluster divided" aria-label="Add a stage deck">
-                <span class="control-label">Add deck</span>
-                <button class="button subtle" data-stage-add-size="1200" type="button">1200 × 1200</button>
-                <button class="button subtle" data-stage-add-size="1800" type="button">1800 × 1200</button>
-                <button class="button subtle" data-stage-add-size="2400" type="button">2400 × 1200</button>
-              </div>
-
-              <div class="control-cluster divided selected-controls">
-                <label>
-                  <span>Selected deck</span>
-                  <select id="stageDeckSize">
-                    <option value="1200">1200 × 1200</option>
-                    <option value="1800">1800 × 1200</option>
-                    <option value="2400">2400 × 1200</option>
-                  </select>
-                </label>
-                <button class="button subtle" id="stageRotateDeckBtn" type="button">Rotate selected</button>
-                <span id="stageSelectionHint" class="selection-hint">Select a deck to edit it</span>
-              </div>
-            </div>
-
             <div class="grid-scroll">
               <div class="grid-wrap">
                 <div class="stage-grid" id="stageGrid"></div>
@@ -91,30 +122,96 @@
 
             <div class="grid-legend">
               <span><i class="support-swatch"></i> Shared wood support</span>
+              <span><i class="skirt-swatch"></i> Calculated stage skirt</span>
               <span>Number shows how many deck legs use that support</span>
-              <span>Drag decks to move them · snaps every 600 mm</span>
+              <span id="stageSnapLegend">Drag decks to move them · snaps every 100 mm</span>
+              <span>Drag upward to create space above the first row</span>
             </div>
           </div>
 
-          <aside class="material-summary" aria-label="Calculated materials">
-            <h2>Materials</h2>
-            <div class="material-primary">
-              <div><strong id="stageDeckCount">0</strong><span>Decks</span></div>
-              <div><strong id="stageLegCount">0</strong><span>Legs</span></div>
-              <div class="wood-total"><strong id="stageWoodCount">0</strong><span>Wood</span></div>
+          <aside class="side-panel" aria-label="Stage controls">
+            <div class="layout-controls">
+              <div class="control-cluster layout-settings">
+                <span class="control-section-title">Layout</span>
+                <label>
+                  <span>Row</span>
+                  <input id="stageRows" type="number" min="1" max="12" value="2" />
+                </label>
+                <label>
+                  <span>Column</span>
+                  <input id="stageColumns" type="number" min="1" max="12" value="3" />
+                </label>
+                <label>
+                  <span>Snap</span>
+                  <select id="stageSnap">
+                    <option value="100" selected>100 mm</option>
+                    <option value="300">300 mm</option>
+                    <option value="600">600 mm</option>
+                  </select>
+                </label>
+              <div class="zoom-field">
+                <span>Zoom</span>
+                <div class="zoom-control" role="group" aria-label="Canvas zoom">
+                  <button id="stageZoomOutBtn" type="button" aria-label="Zoom out">−</button>
+                  <button id="stageZoomResetBtn" type="button" aria-label="Reset zoom">100%</button>
+                  <button id="stageZoomInBtn" type="button" aria-label="Zoom in">+</button>
+                </div>
+              </div>
+                <button class="button subtle" id="stageClearBtn" type="button">Clear Grid</button>
+              </div>
+
+              <div class="control-cluster divided export-settings">
+                <span class="control-section-title">Export name</span>
+                <label><span>Gig</span><input id="stageGigName" type="text" maxlength="80" placeholder="Gig name" /></label>
+                <label><span>Area</span><input id="stageAreaName" type="text" maxlength="80" placeholder="Main stage, foyer…" /></label>
+              </div>
+
+              <div class="control-cluster divided" aria-label="Add a stage deck">
+                <span class="control-section-title">Add deck</span>
+                <button class="button subtle" data-stage-add-size="1200x1200" type="button">1200 × 1200</button>
+                <button class="button subtle" data-stage-add-size="1800x1200" type="button">1800 × 1200</button>
+                <button class="button subtle" data-stage-add-size="2400x1200" type="button">2400 × 1200</button>
+                <button class="button subtle" data-stage-add-size="1000x2000" type="button">1000 × 2000</button>
+                <button class="button subtle" data-stage-add-size="2000x500" type="button">2000 × 500</button>
+              </div>
+
+              <div id="stageSelectionControls" class="control-cluster divided selected-controls" aria-label="Selection controls">
+                <div class="selection-toolbar-heading">
+                  <span class="control-section-title">Selection</span>
+                  <span id="stageSelectionCount" class="selection-count">0 selected</span>
+                  <button class="button subtle selection-delete" id="stageDeleteSelectedBtn" type="button" disabled aria-label="Delete selected decks">Delete</button>
+                </div>
+                <div id="stageDeckSizeControls" class="selection-size-controls" hidden>
+                  <span class="control-label">Deck size</span>
+                  <div class="option-group" aria-label="Selected deck size">
+                    <button data-selected-deck-type="1200x1200" type="button" aria-pressed="false">1200 × 1200</button>
+                    <button data-selected-deck-type="1800x1200" type="button" aria-pressed="false">1800 × 1200</button>
+                    <button data-selected-deck-type="2400x1200" type="button" aria-pressed="false">2400 × 1200</button>
+                    <button data-selected-deck-type="1000x2000" type="button" aria-pressed="false">1000 × 2000</button>
+                    <button data-selected-deck-type="2000x500" type="button" aria-pressed="false">2000 × 500</button>
+                  </div>
+                </div>
+                <div class="option-group" aria-label="Rotate selection">
+                  <button id="stageRotateLeftBtn" type="button" aria-label="Rotate selection left">↺ Left</button>
+                  <button id="stageRotateRightBtn" type="button" aria-label="Rotate selection right">Right ↻</button>
+                </div>
+                <span class="control-label compact">Legs</span>
+                <div class="option-group" aria-label="Selected deck leg count">
+                  <button data-selected-deck-legs="4" type="button" aria-pressed="false">4 legs</button>
+                  <button data-selected-deck-legs="6" type="button" aria-pressed="false">6 legs</button>
+                </div>
+                <span id="stageSelectionHint" class="selection-hint">Drag on empty canvas to select; Ctrl/Cmd-click to add or remove decks.</span>
+              </div>
+              <div class="control-cluster divided skirt-settings" aria-label="Stage skirt coverage">
+                <span class="control-section-title">Stage skirt</span>
+                <label class="skirt-back-option">
+                  <input id="stageSkirtBackOpen" type="checkbox" />
+                  <span>Leave the back open <small>(300 mm return at each corner)</small></span>
+                </label>
+                <div class="skirt-join-note">Back is the top edge of the canvas. Allow 100 mm overlap where skirts join.</div>
+              </div>
             </div>
-            <dl class="material-breakdown">
-              <div><dt>1200 × 1200 decks</dt><dd id="stage1200Count">0</dd></div>
-              <div><dt>1800 × 1200 decks</dt><dd id="stage1800Count">0</dd></div>
-              <div><dt>2400 × 1200 decks</dt><dd id="stage2400Count">0</dd></div>
-              <div><dt>4-leg decks</dt><dd id="stageFourCount">0</dd></div>
-              <div><dt>6-leg decks</dt><dd id="stageSixCount">0</dd></div>
-              <div><dt>Wood without sharing</dt><dd id="stageUnsharedWoodCount">0</dd></div>
-              <div class="saved"><dt>Wood saved by sharing</dt><dd id="stageWoodSaved">0</dd></div>
-            </dl>
-            <div class="calculation-note">
-              Corner supports are shared wherever deck coordinates meet. Six-leg decks also use the midpoint of each long edge. One wood block can support up to four deck legs.
-            </div>
+
           </aside>
         </div>
       </section>
@@ -122,6 +219,8 @@
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <div id="stageContextMenu" class="stage-context-menu" role="menu" aria-label="Stage deck actions" hidden></div>
+  <script src="calculator.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

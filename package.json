@@ -1,0 +1,39 @@
+{
+  "name": "stage-deck-calculator",
+  "version": "1.0.0",
+  "description": "Standalone stage deck, leg and wood support calculator",
+  "main": "main.js",
+  "author": "Justin",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/*.test.js",
+    "dist": "node scripts/build-portable.js"
+  },
+  "devDependencies": {
+    "electron": "44.1.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "nz.co.stagedeck.calculator",
+    "productName": "Stage Deck Calculator",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "index.html",
+      "styles.css",
+      "calculator.js",
+      "app.js",
+      "main.js"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "artifactName": "Stage-Deck-Calculator-${version}.exe"
+    }
+  }
+}
