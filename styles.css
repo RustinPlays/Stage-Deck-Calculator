@@ -1062,3 +1062,17 @@ select:focus-visible,
   .calculator-shell { padding: 0; }
   .calculator { width: 100%; border: 0; box-shadow: none; }
 }
+
+.stage-add-edge {
+  position: absolute; z-index: 8; width: 24px; height: 24px;
+  border: 1px solid var(--accent, #147bd1); border-radius: 50%;
+  background: var(--surface); color: var(--text); font-size: 19px;
+  line-height: 20px; padding: 0; cursor: pointer;
+}
+.stage-add-edge.top { transform: translate(-50%, -115%); }
+.stage-add-edge.bottom { transform: translate(-50%, 15%); }
+.stage-add-edge.left { transform: translate(-115%, -50%); }
+.stage-add-edge.right { transform: translate(15%, -50%); }
+.stage-add-edge:hover, .stage-add-edge:focus-visible { background: var(--accent, #147bd1); color: white; }
+.grid-wrap { padding: 36px; }
+.support-layer { left: 36px; top: 36px; }

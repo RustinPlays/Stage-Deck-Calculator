@@ -4,6 +4,33 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const Model = require('../calculator.js');
 
+test('add handles exclude shared edges and retain partially exposed segments', () => {
+  assert.equal(Model.getDeckAddEdges(Model.createDefaultCalculator().decks).length, 10);
+  const decks = [
+    { id: 'a', x: 0, y: 0, width: 2400, height: 1200 },
+    { id: 'b', x: 0, y: 1200, width: 1200, height: 1200 }
+  ];
+  const edge = Model.getDeckAddEdges(decks).find(edge => edge.deckId === 'a' && edge.side === 'bottom');
+  assert.deepEqual([edge.start, edge.end], [1200, 2400]);
+  const candidate = Model.getAdjacentPlacement({ decks }, edge, Model.DECK_TYPES[0]);
+  assert.deepEqual([candidate.x, candidate.y], [1200, 1200]);
+  assert.equal(Model.positionAvailable({ decks }, candidate), true);
+});
+
+test('paste preserves group geometry and legs with fresh ids and no collisions', () => {
+  const calculator = Model.createDefaultCalculator();
+  const pasted = Model.pasteDecks(calculator, calculator.decks);
+  assert.equal(pasted.length, 6);
+  assert.equal(Model.findOverlaps([...calculator.decks, ...pasted]).length, 0);
+  pasted.forEach((deck, index) => {
+    const original = calculator.decks[index];
+    assert.notEqual(deck.id, original.id);
+    assert.equal(deck.x - original.x, pasted[0].x - calculator.decks[0].x);
+    assert.deepEqual([deck.y, deck.width, deck.height, deck.legs],
+      [original.y, original.width, original.height, original.legs]);
+  });
+});
+
 test('coarse movement snap preserves mixed deck edge positions across saves', () => {
   const layout = Model.normalizeCalculator({ snapMm: 600, gigName: 'Example gig', areaName: 'Foyer', decks: [
     { id: 'a', x: 0, y: 0, type: '1000x2000', width: 2000, height: 1000, legs: 6 },

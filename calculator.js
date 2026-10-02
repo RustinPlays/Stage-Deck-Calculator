@@ -159,6 +159,57 @@
     return !calculator.decks.some(deck => deck.id !== ignoredId && rectanglesOverlap(candidate, deck));
   }
 
+  function getDeckAddEdges(decks) {
+    return decks.flatMap(deck => ['top', 'right', 'bottom', 'left'].flatMap(side => {
+      const horizontal = side === 'top' || side === 'bottom';
+      const start = horizontal ? deck.x : deck.y;
+      const end = start + (horizontal ? deck.width : deck.height);
+      const coordinate = side === 'top' ? deck.y : side === 'bottom' ? deck.y + deck.height
+        : side === 'left' ? deck.x : deck.x + deck.width;
+      let segments = [[start, end]];
+      decks.filter(other => other.id !== deck.id).forEach(other => {
+        const blocks = side === 'top' ? other.y < coordinate && other.y + other.height >= coordinate
+          : side === 'bottom' ? other.y <= coordinate && other.y + other.height > coordinate
+          : side === 'left' ? other.x < coordinate && other.x + other.width >= coordinate
+          : other.x <= coordinate && other.x + other.width > coordinate;
+        if (!blocks) return;
+        const low = horizontal ? other.x : other.y;
+        const high = low + (horizontal ? other.width : other.height);
+        segments = segments.flatMap(([a, b]) => high <= a || low >= b ? [[a, b]]
+          : [[a, Math.min(b, low)], [Math.max(a, high), b]].filter(([c, d]) => d > c));
+      });
+      return segments.map(([a, b]) => ({ deckId: deck.id, side, start: a, end: b,
+        x: horizontal ? (a + b) / 2 : coordinate,
+        y: horizontal ? coordinate : (a + b) / 2 }));
+    }));
+  }
+
+  function getAdjacentPlacement(calculator, edge, type) {
+    const horizontal = edge.side === 'top' || edge.side === 'bottom';
+    const length = horizontal ? type.width : type.height;
+    const preferred = snapCoordinate((edge.start + edge.end - length) / 2);
+    const positions = [preferred];
+    for (let value = Math.ceil((edge.start - length + SNAP_MM) / SNAP_MM) * SNAP_MM;
+      value < edge.end; value += SNAP_MM) positions.push(value);
+    positions.sort((a, b) => Math.abs(a - preferred) - Math.abs(b - preferred));
+    for (const value of positions) {
+      const candidate = { ...type,
+        x: horizontal ? value : edge.side === 'left' ? edge.x - type.width : edge.x,
+        y: horizontal ? edge.side === 'top' ? edge.y - type.height : edge.y : value };
+      if (positionAvailable(calculator, candidate)) return candidate;
+    }
+    return null;
+  }
+
+  function pasteDecks(calculator, copied) {
+    if (!copied.length) return [];
+    const width = Math.max(...copied.map(deck => deck.x + deck.width)) - Math.min(...copied.map(deck => deck.x));
+    for (let offset = Math.ceil(width / SNAP_MM) * SNAP_MM; ; offset += SNAP_MM) {
+      const candidates = copied.map(deck => ({ ...deck, x: deck.x + offset, id: uid() }));
+      if (candidates.every(deck => positionAvailable(calculator, deck))) return candidates;
+    }
+  }
+
   function findOverlaps(decks) {
     const overlaps = [];
     for (let first = 0; first < decks.length; first += 1) {
@@ -491,6 +542,9 @@
     normalizeCalculator,
     rectanglesOverlap,
     positionAvailable,
+    getDeckAddEdges,
+    getAdjacentPlacement,
+    pasteDecks,
     findOverlaps,
     getRotatedDeck,
     rotateDecksAroundCenter,

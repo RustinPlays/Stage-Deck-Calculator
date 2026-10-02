@@ -133,14 +133,8 @@
             <div class="layout-controls">
               <div class="control-cluster layout-settings">
                 <span class="control-section-title">Layout</span>
-                <label>
-                  <span>Row</span>
-                  <input id="stageRows" type="number" min="1" max="12" value="2" />
-                </label>
-                <label>
-                  <span>Column</span>
-                  <input id="stageColumns" type="number" min="1" max="12" value="3" />
-                </label>
+                
+                
                 <label>
                   <span>Snap</span>
                   <select id="stageSnap">
@@ -167,7 +161,7 @@
               </div>
 
               <div class="control-cluster divided" aria-label="Add a stage deck">
-                <span class="control-section-title">Add deck</span>
+                <span class="control-section-title">Add deck</span><button class="button subtle" id="stageCopyBtn" type="button">Copy selection</button><button class="button subtle" id="stagePasteBtn" type="button" disabled>Paste</button>
                 <button class="button subtle" data-stage-add-size="1200x1200" type="button">1200 × 1200</button>
                 <button class="button subtle" data-stage-add-size="1800x1200" type="button">1800 × 1200</button>
                 <button class="button subtle" data-stage-add-size="2400x1200" type="button">2400 × 1200</button>

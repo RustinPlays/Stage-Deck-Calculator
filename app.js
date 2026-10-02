@@ -9,8 +9,7 @@
   const elementIds = [
     'stageGigName', 'stageAreaName',
     'lightThemeBtn', 'darkThemeBtn', 'saveStatus', 'materialsToggleBtn', 'materialsPopover', 'helpToggleBtn', 'helpPopover', 'helpCloseBtn',
-    'stageContextMenu', 'stageSelectionControls', 'newBtn', 'importBtn', 'exportBtn', 'exportPngBtn', 'importFile', 'stageRows',
-    'stageColumns', 'stageSnap', 'stageZoomOutBtn', 'stageZoomResetBtn', 'stageZoomInBtn', 'stageClearBtn',
+    'stageContextMenu', 'stageSelectionControls', 'newBtn', 'importBtn', 'exportBtn', 'exportPngBtn', 'importFile', 'stageCopyBtn', 'stagePasteBtn', 'stageSnap', 'stageZoomOutBtn', 'stageZoomResetBtn', 'stageZoomInBtn', 'stageClearBtn',
     'stageGrid', 'stageSupportLayer', 'stageRotateLeftBtn', 'stageRotateRightBtn', 'stageSelectionHint', 'stageSnapLegend', 'stageDeckCount',
     'stageSelectionCount', 'stageDeleteSelectedBtn', 'stageDeckSizeControls', 'stageOverlapWarning',
     'stageLegCount', 'stageWoodCount', 'stage1200Row', 'stage1200Count', 'stage1800Row', 'stage1800Count',
@@ -34,6 +33,8 @@
   let suppressAddClickUntil = 0;
   let wheelZoomAccumulator = 0;
   let contextMenuState = null;
+  let copiedDecks = [];
+  let addEdges = [];
   let toastTimer = null;
 
   applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
@@ -50,8 +51,8 @@
     });
     el.lightThemeBtn.addEventListener('click', () => applyTheme('light'));
     el.darkThemeBtn.addEventListener('click', () => applyTheme('dark'));
-    el.stageRows.addEventListener('change', resizeGrid);
-    el.stageColumns.addEventListener('change', resizeGrid);
+    el.stageCopyBtn.addEventListener('click', copySelection);
+    el.stagePasteBtn.addEventListener('click', pasteSelection);
     el.stageSnap.addEventListener('change', changeSnap);
     el.stageZoomOutBtn.addEventListener('click', () => changeZoom(-1));
     el.stageZoomResetBtn.addEventListener('click', () => setZoom(1));
@@ -212,11 +213,6 @@
     render();
   }
 
-  function resizeGrid() {
-    calculator.rows = Model.clamp(Math.round(Number(el.stageRows.value) || calculator.rows), 1, 12);
-    calculator.columns = Model.clamp(Math.round(Number(el.stageColumns.value) || calculator.columns), 1, 12);
-    commit();
-  }
 
   function changeSnap() {
     calculator.snapMm = Model.normalizeSnap(el.stageSnap.value);
@@ -377,7 +373,40 @@
     commit();
   }
 
+  function copySelection() {
+    copiedDecks = getSelectedDecks().map(deck => ({ ...deck }));
+    if (copiedDecks.length) showToast(`${copiedDecks.length} deck(s) copied`);
+    render();
+  }
+
+  function pasteSelection() {
+    const pasted = Model.pasteDecks(calculator, copiedDecks);
+    if (!pasted.length) return;
+    calculator.decks.push(...pasted);
+    setSelectedDeckIds(pasted.map(deck => deck.id));
+    commit();
+    showToast(`${pasted.length} deck(s) pasted`);
+  }
+
+  function openEdgeMenu(button) {
+    const edge = addEdges[Number(button.dataset.edgeIndex)];
+    if (!edge) return;
+    const bounds = button.getBoundingClientRect();
+    contextMenuState = { edge };
+    el.stageContextMenu.innerHTML = '<div class="context-menu-title">Add deck beside this edge</div>' + Model.DECK_TYPES.map(type => {
+      const available = Model.getAdjacentPlacement(calculator, edge, type);
+      return `<button type="button" role="menuitem" data-context-action="add-edge" data-deck-type="${type.id}" ${available ? '' : 'disabled'}>${type.width} &times; ${type.height}${available ? '' : ' (no space)'}</button>`;
+    }).join('');
+    el.stageContextMenu.hidden = false;
+    const menu = el.stageContextMenu.getBoundingClientRect();
+    el.stageContextMenu.style.left = `${Model.clamp(bounds.left, 8, window.innerWidth - menu.width - 8)}px`;
+    el.stageContextMenu.style.top = `${Model.clamp(bounds.bottom, 8, window.innerHeight - menu.height - 8)}px`;
+    el.stageContextMenu.querySelector('button:not(:disabled)')?.focus();
+  }
+
   function onGridClick(event) {
+    const edgeButton = event.target.closest('[data-edge-index]');
+    if (edgeButton) { openEdgeMenu(edgeButton); return; }
     const button = event.target.closest('button[data-stage-action]');
     if (!button) return;
     const id = button.dataset.deckId;
@@ -402,6 +431,7 @@
   }
 
   function onDeckPointerDown(event) {
+    if (event.target.closest('[data-edge-index]')) return;
     if (event.button === 2) {
       event.preventDefault();
       const gridScroll = el.stageGrid.closest('.grid-scroll');
@@ -702,7 +732,11 @@
       return;
     }
     if (event.target.matches('input, select, textarea')) return;
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+    if ((event.ctrlKey || event.metaKey) && ['c', 'v'].includes(event.key.toLowerCase())) {
+      event.preventDefault();
+      if (event.key.toLowerCase() === 'c') copySelection();
+      else pasteSelection();
+    } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
       event.preventDefault();
       setSelectedDeckIds(calculator.decks.map(deck => deck.id));
       render();
@@ -1090,8 +1124,8 @@
     const gridWidth = metrics.width * scale + (calculator.decks.length ? 80 : 0);
     const gridHeight = metrics.height * scale + (calculator.decks.length ? 64 : 0);
 
-    el.stageRows.value = calculator.rows;
-    el.stageColumns.value = calculator.columns;
+    el.stageCopyBtn.disabled = !selectedDecks.length;
+    el.stagePasteBtn.disabled = !copiedDecks.length;
     el.stageSnap.value = String(calculator.snapMm);
     el.stageGigName.value = calculator.gigName || '';
     el.stageAreaName.value = calculator.areaName || '';
@@ -1157,7 +1191,9 @@
     const dimensionMarkup = dimensions
       ? `<svg class="stage-dimensions" width="${gridWidth}" height="${gridHeight}" aria-label="Overall stage dimensions"><path d="${dimensions.path}"/>${dimensions.labels.map(label => `<text x="${label.x}" y="${label.y}"${label.rotate ? ` transform="rotate(-90 ${label.x} ${label.y})"` : ''}>${label.text}</text>`).join('')}</svg>`
       : '';
-    el.stageGrid.innerHTML = `${deckMarkup}${skirtMarkup}${dimensionMarkup}${marqueeMarkup}${placementMarkup}`;
+    addEdges = Model.getDeckAddEdges(calculator.decks);
+    const edgeMarkup = addEdges.map((edge, index) => `<button class="stage-add-edge ${edge.side}" data-edge-index="${index}" type="button" aria-label="Add deck at ${edge.side} exposed edge" aria-haspopup="menu" style="left:${(edge.x + metrics.offsetX) * scale}px;top:${(edge.y + metrics.offsetY) * scale}px">+</button>`).join('');
+    el.stageGrid.innerHTML = `${edgeMarkup}${deckMarkup}${skirtMarkup}${dimensionMarkup}${marqueeMarkup}${placementMarkup}`;
 
     el.stageSupportLayer.style.width = `${gridWidth}px`;
     el.stageSupportLayer.style.height = `${gridHeight}px`;
@@ -1312,7 +1348,12 @@
     const menuPosition = contextMenuState;
     closeStageContextMenu();
 
-    if (action === 'add') {
+    if (action === 'add-edge') {
+      const type = Model.DECK_TYPES.find(item => item.id === button.dataset.deckType);
+      const position = type && menuPosition?.edge && Model.getAdjacentPlacement(calculator, menuPosition.edge, type);
+      if (position) addDeckAt(type, position.x, position.y);
+      else showToast('There is no space for that deck here.', true);
+    } else if (action === 'add') {
       const type = Model.DECK_TYPES.find(item => item.id === button.dataset.deckType);
       if (!type || !menuPosition) return;
       const position = getPlacementCoordinates({ ...menuPosition, type });
