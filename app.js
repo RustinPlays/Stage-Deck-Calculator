@@ -29,6 +29,7 @@
   let rotationState = null;
   let marqueeState = null;
   let placementState = null;
+  let pendingDeckType = null;
   let suppressEdgeClickUntil = 0;
   let suppressAddClickUntil = 0;
   let wheelZoomAccumulator = 0;
@@ -85,6 +86,11 @@
     const gridScroll = el.stageGrid.closest('.grid-scroll');
     gridScroll.addEventListener('wheel', onCanvasWheel, { passive: false });
     gridScroll.addEventListener('contextmenu', event => event.preventDefault());
+    document.addEventListener('contextmenu', event => {
+      if (gridScroll.contains(event.target)
+        || el.stageContextMenu.contains(event.target)
+        || !el.stageContextMenu.hidden) event.preventDefault();
+    }, { capture: true });
     el.stageRotateLeftBtn.addEventListener('click', () => rotateSelectedDeck('left'));
     el.stageRotateRightBtn.addEventListener('click', () => rotateSelectedDeck('right'));
     el.stageDeleteSelectedBtn.addEventListener('click', deleteSelectedDecks);
@@ -101,7 +107,9 @@
           event.preventDefault();
           return;
         }
-        addDeck(button.dataset.stageAddSize);
+        pendingDeckType = Model.DECK_TYPES.find(type => type.id === button.dataset.stageAddSize);
+        render();
+        showToast('Click a + or empty grid space to place this deck. Escape cancels.');
       });
     });
     window.addEventListener('pointermove', onDeckPointerMove);
@@ -252,7 +260,7 @@
       type: type.id,
       width: type.width,
       height: type.height,
-      legs: type.id === '1200x1200' ? 4 : 6
+      legs: type.legs ?? (type.id === '1200x1200' ? 4 : 6)
     };
     calculator.decks.push(deck);
     setSelectedDeckIds([deck.id]);
@@ -406,7 +414,28 @@
 
   function onGridClick(event) {
     const edgeButton = event.target.closest('[data-edge-index]');
-    if (edgeButton) { openEdgeMenu(edgeButton); return; }
+    if (edgeButton) {
+      const edge = addEdges[Number(edgeButton.dataset.edgeIndex)];
+      const source = edge && calculator.decks.find(deck => deck.id === edge.deckId);
+      if (!source) return;
+      const type = pendingDeckType || { id: source.type, width: source.width, height: source.height, legs: source.legs };
+      const position = Model.getAdjacentPlacement(calculator, edge, type);
+      if (!position) { showToast('There is no space for that deck here.', true); return; }
+      pendingDeckType = null;
+      addDeckAt(type, position.x, position.y);
+      return;
+    }
+    if (pendingDeckType && event.target === el.stageGrid) {
+      const type = pendingDeckType;
+      const position = getPlacementCoordinates({ clientX: event.clientX, clientY: event.clientY, type });
+      if (!Model.positionAvailable(calculator, { ...type, ...position })) {
+        showToast('There is no space for that deck here.', true);
+        return;
+      }
+      pendingDeckType = null;
+      addDeckAt(type, position.x, position.y);
+      return;
+    }
     const button = event.target.closest('button[data-stage-action]');
     if (!button) return;
     const id = button.dataset.deckId;
@@ -432,6 +461,7 @@
 
   function onDeckPointerDown(event) {
     if (event.target.closest('[data-edge-index]')) return;
+    if (pendingDeckType && event.button === 0 && event.target === el.stageGrid) return;
     if (event.button === 2) {
       event.preventDefault();
       const gridScroll = el.stageGrid.closest('.grid-scroll');
@@ -651,8 +681,9 @@
           && placement.clientX <= gridBounds.right
           && placement.clientY >= gridBounds.top
           && placement.clientY <= gridBounds.bottom;
-        if (insideGrid) {
+        if (insideGrid && event.type !== 'pointercancel' && Model.positionAvailable(calculator, { ...placement.type, x, y })) {
           suppressAddClickUntil = Date.now() + 350;
+          pendingDeckType = null;
           addDeckAt(placement.type, x, y);
         } else {
           render();
@@ -719,6 +750,11 @@
   }
 
   function onWindowKeyDown(event) {
+    if (event.key === 'Escape' && pendingDeckType) {
+      pendingDeckType = null;
+      render();
+      return;
+    }
     if (event.key === 'Escape' && !el.helpPopover.hidden) {
       closeHelpPopover();
       return;
@@ -1115,6 +1151,9 @@
   }
 
   function render() {
+    document.querySelectorAll('[data-stage-add-size]').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.stageAddSize === pendingDeckType?.id));
+    });
     const materials = Model.calculateMaterials(calculator);
     const selectedDecks = getSelectedDecks();
     const selectedIds = new Set(selectedDecks.map(deck => deck.id));

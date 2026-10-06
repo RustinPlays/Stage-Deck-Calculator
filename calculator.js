@@ -81,7 +81,7 @@
       snapMm: SNAP_MM,
       selectedDeckId: null,
       selectedDeckIds: [],
-      skirtBackOpen: false,
+      skirtBackOpen: true,
       decks
     };
   }
@@ -143,7 +143,7 @@
       snapMm,
       selectedDeckId,
       selectedDeckIds,
-      skirtBackOpen: value.skirtBackOpen === true,
+      skirtBackOpen: value.skirtBackOpen !== false,
       decks
     };
   }

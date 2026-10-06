@@ -58,6 +58,7 @@ test('default 2 by 3 layout has the expected materials', () => {
 
 test('stage dimensions report carpet area, exposed perimeter, and skirt lengths', () => {
   const calculator = Model.normalizeCalculator({
+    skirtBackOpen: false,
     decks: [
       { id: 'a', x: 0, y: 0, size: 2400, width: 2400, height: 1200, legs: 6 },
       { id: 'b', x: 2400, y: 0, size: 2400, width: 2400, height: 1200, legs: 6 },
@@ -106,6 +107,7 @@ test('empty carpet layout orders no roll material', () => {
 
 test('perimeter counts exposed deck edges and rounds skirts up to full lengths', () => {
   const calculator = Model.normalizeCalculator({
+    skirtBackOpen: false,
     decks: [
       { id: 'a', x: 0, y: 0, size: 2400, width: 2400, height: 1200, legs: 4 },
       { id: 'b', x: 2400, y: 0, size: 2400, width: 2400, height: 1200, legs: 4 }
